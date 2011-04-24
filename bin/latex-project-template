@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/latex_project_template'
+require 'optparse'
+
+help_message =<<HELP
+Usage: #{File.basename(__FILE__)} project template
+HELP
+
+options = {
+  :mode => :create
+}
+
+begin
+  OptionParser.new(help_message) do |opt|
+    opt.on("--init", "Initialize configuration directory.") do |v|
+      options[:mode] = :init
+    end
+    opt.parse!(ARGV)
+  end
+rescue OptionParser::InvalidOption
+  $stderr.print <<MES
+error: Invalid Option
+#{help_message}
+MES
+  exit(2)
+rescue OptionParser::InvalidArgument
+  $stderr.print <<MES
+error: Invalid Argument
+#{help_message}
+MES
+  exit(2)
+end
+
+case options[:mode]
+when :init
+  LaTeXProjectTemplate.init_config
+when :create
+  dir = ARGV[0]
+  template = ARGV[1]
+  if dir && template
+    LaTeXProjectTemplate.new(dir, template).init
+  end
+end

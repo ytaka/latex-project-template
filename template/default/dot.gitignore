@@ -1,0 +1,16 @@
+# TeX generated
+*.log
+*.aux
+*.dvi
+*.pdf
+
+# For latexmk
+*.fdb_latexmk
+
+# For emacs:
+*~
+\#*
+.\#*
+
+# For TexGit
+snapshot
