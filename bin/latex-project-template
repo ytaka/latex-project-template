@@ -13,6 +13,12 @@ options = {
 
 begin
   OptionParser.new(help_message) do |opt|
+    opt.on("--list", "List templates.") do |v|
+      options[:mode] = :list
+    end
+    opt.on("--delete", "Delete template.") do |v|
+      options[:mode] = :delete
+    end
     opt.on("--init", "Initialize configuration directory.") do |v|
       options[:mode] = :init
     end
@@ -34,11 +40,18 @@ end
 
 case options[:mode]
 when :init
-  LaTeXProjectTemplate.init_config
+  LaTeXProjectTemplate::Configuration.new.init_config
+when :list
+  LaTeXProjectTemplate::Configuration.new.list_template.each do |template|
+    $stdout.puts template
+  end
+when :delete
+  template = ARGV[0]
+  LaTeXProjectTemplate::Configuration.new.delete_template(template)
 when :create
   dir = ARGV[0]
   template = ARGV[1]
   if dir && template
-    LaTeXProjectTemplate.new(dir, template).init
+    LaTeXProjectTemplate.new(dir, template).create
   end
 end

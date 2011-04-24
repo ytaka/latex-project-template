@@ -10,18 +10,57 @@ autoload :FileName, 'filename'
 class LaTeXProjectTemplate
   DEFAULT_CONFIG = "~/.latex_project_template"
 
-  def self.init_config(path = DEFAULT_CONFIG)
-    target = File.expand_path(path)
-    FileUtils.mkdir_p(target)
-    Dir.glob("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}/*").each do |d|
-      FileUtils.cp_r(d, target)
+  class Configuration
+    def initialize(path = DEFAULT_CONFIG)
+      @path = File.expand_path(path)
     end
+
+    def init_config(path = DEFAULT_CONFIG)
+      FileUtils.mkdir_p(@path)
+      Dir.glob("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}/*").each do |d|
+        FileUtils.cp_r(d, @path)
+      end
+    end
+
+    def list_template
+      Dir.entries(@path).delete_if do |d|
+        /^\.+$/ =~ d
+      end.sort
+    end
+
+    def template_exist?(template)
+      path = File.join(@path, template)
+      if File.exist?(path)
+        path
+      else
+        nil
+      end
+    end
+
+    def template_file(template, name)
+      path = File.join(@path, template, name)
+      unless File.exist?(path)
+        path = File.join(@path, 'default', name)
+        unless File.exist?(path)
+          path = nil
+        end
+      end
+      path
+    end
+
+    def delete_template(template)
+      if path = template_exist?(template)
+        FileUtils.rm_r(path)
+      end
+    end
+
   end
 
+
   def initialize(dir, template, config = DEFAULT_CONFIG)
-    @config = File.expand_path(config)
-    if template_exist?(template)
-      @dir = FileName.create(dir, :directory => :self)
+    @config = LaTeXProjectTemplate::Configuration.new(config)
+    if @config.template_exist?(template)
+      @dir = File.expand_path(dir)
       @template = template
       @main_tex_file = File.basename(dir).sub(/\/$/, '') + ".tex"
     else
@@ -29,39 +68,15 @@ class LaTeXProjectTemplate
     end
   end
 
-  def template_exist?(template)
-    File.exist?(File.join(@config, template))
-  end
-  private :template_exist?
-
-  def template_file_path(name)
-    path = File.join(@config, @template, name)
-    unless File.exist?(path)
-      path = File.join(@config, 'default', name)
-      unless File.exist?(path)
-        path = nil
-      end
-    end
-    path
-  end
-  private :template_file_path
-
   def copy_default_to_dir(name, to = nil, io = nil)
-    if path = template_file_path(name)
+    if path = @config.template_file(@template, name)
       FileUtils.cp_r(path, File.join(@dir, to || name))
-    #   if io
-    #     io.puts "Copy #{name} in #{@config}"
-    #   end
-    # else
-    #   if io
-    #     io.puts "Can not find #{name} in #{@config}"
-    #   end
     end
   end
   private :copy_default_to_dir
 
   def create_rakefile
-    if rakefile_erb = template_file_path("Rakefile.erb")
+    if rakefile_erb = @config.template_file(@template, "Rakefile.erb")
       obj = Object.new
       obj.instance_variable_set(:@main_tex_file, @main_tex_file)
       obj.instance_exec(rakefile_erb, File.join(@dir, 'Rakefile')) do |path, out|
@@ -74,7 +89,8 @@ class LaTeXProjectTemplate
   end
   private :create_rakefile
 
-  def init
+  def create
+    @dir = FileName.create(@dir, :directory => :self)
     git = Git.init(@dir)
     copy_default_to_dir('dot.gitignore', '.gitignore')
     copy_default_to_dir('latexmk')
