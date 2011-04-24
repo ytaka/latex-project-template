@@ -14,15 +14,16 @@ Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
   gem.name = "latex-project-template"
   gem.homepage = "http://github.com/ytaka/latex-project-template"
-  gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.license = "GPLv3"
+  gem.summary = "LaTeX Project Template"
+  gem.description = "Create LaTeX project from template."
   gem.email = "d@ytak.info"
   gem.authors = ["Takayuki YAMAGUCHI"]
   # Include your dependencies below. Runtime dependencies are required when using your gem,
   # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
-  #  gem.add_runtime_dependency 'jabber4r', '> 0.1'
-  #  gem.add_development_dependency 'rspec', '> 1.2.3'
+  gem.add_runtime_dependency 'git', '>= 1.2.5'
+  gem.add_runtime_dependency 'filename', '>= 0.1.0'
+  gem.add_development_dependency 'rspec', '>= 2.5.0'
 end
 Jeweler::RubygemsDotOrgTasks.new
 
