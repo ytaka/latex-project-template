@@ -12,6 +12,7 @@ class LaTeXProjectTemplate
 
     def initialize
       @pattern = Rake::FileList.new(DEFAULT_PATTERN)
+      @pattern.clear_exclude
     end
 
     def clean_files(list)
