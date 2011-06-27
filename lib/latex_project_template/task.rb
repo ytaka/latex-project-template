@@ -78,17 +78,21 @@ class LaTeXProjectTemplate
   end
 
   class Task < Rake::TaskLib
-    attr_accessor :latexmk, :clean
+    attr_accessor :latexmk, :clean, :default
 
     def initialize(target, &block)
       @target = target
       @latexmk = Latexmk.new
       @clean = Cleaning.new
+      @default = :pdf
       yield(self) if block_given?
       define_task
     end
 
     def define_task
+      desc "Default task"
+      task :default => @default
+
       desc "Clean up temporary files."
       task :clean do |t|
         @latexmk.clean(@target)
