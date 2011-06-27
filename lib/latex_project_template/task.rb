@@ -1,53 +1,42 @@
 require 'rake'
+require 'rake/tasklib'
 require 'filename'
 
 class LaTeXProjectTemplate
   class Cleaning
+    include Rake::DSL
+
     attr_reader :temporary, :product, :pattern
 
     DEFAULT_PATTERN = ["**/*~", "**/*.bak"]
-    DEFAULT_TEMPORARY = ['log', 'aux', 'blg']
-    DEFAULT_PRODUCT = ['dvi', 'pdf', 'ps']
 
     def initialize
       @pattern = Rake::FileList.new(DEFAULT_PATTERN)
-      @temporary = DEFAULT_TEMPORARY.dup
-      @product = DEFAULT_PRODUCT.dup
     end
 
     def clean_files(list)
       list.each do |fn|
-        rm_r fn
-      rescue
-        nil
+        begin
+          rm_r fn
+        rescue
+          nil
+        end
       end
     end
     private :clean_files
 
-    def clean_target_files(target, list_extension)
-      list = list_extension.map do |ext|
-        FileName.create(target, :extension => ext, :add => :prohibit)
-      end
-      clean_files(list)
-    end
-    private :clean_target_files
-
-    def clean(target)
+    def clean
       clean_files(@pattern)
-      clean_target_files(target, @temporary)
-    end
-
-    def clean_completely(target)
-      clean
-      clean_target_files(target, @product)
     end
   end
 
   class Latexmk
-    def initialize(latekmk = 'latexmk')
-      @latexmk = latexmk
-      @clean = Cleaning.new
-      @path = {}
+    include Rake::DSL
+
+    attr_accessor :path
+
+    def initialize()
+      @path = 'latexmk'
       @command = {}
 
       set(:dvi) do |target|
@@ -81,29 +70,20 @@ class LaTeXProjectTemplate
       end
     end
 
-    [:dvi, :ps, :pdf].each do |sym|
+    [:dvi, :ps, :pdf, :clean, :distclean].each do |sym|
       define_method(sym) do |target|
         execute_command(sym, target)
       end
     end
-
-    def clean(target)
-      execute_command(:clean, target)
-      @clean.clean(target)
-    end
-
-    def distclean(target)
-      execute_command(:distclean, target)
-      @clean.clean_completely(target)
-    end
   end
 
   class Task < Rake::TaskLib
-    attr_accessor :command
+    attr_accessor :latexmk, :clean
 
     def initialize(target, &block)
       @target = target
-      @command = Command::Latexmk.new
+      @latexmk = Latexmk.new
+      @clean = Cleaning.new
       yield(self) if block_given?
       define_task
     end
@@ -111,27 +91,29 @@ class LaTeXProjectTemplate
     def define_task
       desc "Clean up temporary files."
       task :clean do |t|
-        @command.clean(@target)
+        @latexmk.clean(@target)
+        @clean.clean
       end
 
       desc "Clean up all files."
       task :distclean do |t|
-        @command.distclean(@target)
+        @latexmk.distclean(@target)
+        @clean.clean
       end
 
       desc "Create dvi."
       task :dvi => [@target] do |t|
-        @command.dvi(@target)
+        @latexmk.dvi(@target)
       end
 
       desc "Create ps."
       task :ps => [@target] do |t|
-        @command.ps(@target)
+        @latexmk.ps(@target)
       end
 
       desc "Create pdf."
       task :pdf => [@target] do |t|
-        @command.pdf(@target)
+        @latexmk.pdf(@target)
       end
     end
   end

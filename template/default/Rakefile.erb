@@ -1,34 +1,10 @@
+require 'latex_project_template/task'
+
 MAIN_TEX_FILE = "<%= @main_tex_file %>"
 
-gem 'filename'
-autoload :FileName, 'filename'
-
-desc "Default"
-task :default => :pdf
-
-desc "Create dvi"
-task :dvi => [MAIN_TEX_FILE] do |t|
-  sh "latexmk -dvi #{MAIN_TEX_FILE}"
-end
-
-desc "Create ps"
-task :ps => [MAIN_TEX_FILE] do |t|
-  sh "latexmk -ps #{MAIN_TEX_FILE}"
-end
-
-desc "Create pdf"
-task :pdf => [MAIN_TEX_FILE] do |t|
-  sh "latexmk -pdf #{MAIN_TEX_FILE}"
-end
-
-desc "Clean up"
-task :clean do |t|
-  sh "latexmk -c"
-end
-
-desc "Clean up completely"
-task :distclean do |t|
-  sh "latexmk -C"
+LaTeXProjectTemplate::Task.new(MAIN_TEX_FILE) do |task|
+  # task.latexmk.path = '/usr/bin/latexmk'
+  # task.clean.include("#*#")
 end
 
 desc "Create snapshot pdf"
