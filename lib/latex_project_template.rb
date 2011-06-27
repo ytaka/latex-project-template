@@ -1,11 +1,7 @@
-autoload :FileUtils, 'fileutils'
-autoload :ERB, 'erb'
-
-gem 'git'
-autoload :Git, 'git'
-
-gem 'filename'
-autoload :FileName, 'filename'
+require 'fileutils'
+require 'erb'
+require 'git'
+require 'filename'
 
 class LaTeXProjectTemplate
   DEFAULT_CONFIG = "~/.latex_project_template"
