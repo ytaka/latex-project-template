@@ -129,7 +129,7 @@ class LaTeXProjectTemplate
         snapshot_path = FileName.create("snapshot", File.basename(path),
                                         :type => :time, :directory => :parent, :position => :middle,
                                         :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
-        move(pdf_path, snapshot_path)
+        move(path, snapshot_path)
       end
     end
   end
