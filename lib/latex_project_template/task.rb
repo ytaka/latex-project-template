@@ -32,6 +32,8 @@ class LaTeXProjectTemplate
   end
 
   class Latexmk
+    PRODUCT_FILE_TYPE = [:dvi, :ps, :pdf]
+
     include Rake::DSL
 
     attr_accessor :path
@@ -71,7 +73,7 @@ class LaTeXProjectTemplate
       end
     end
 
-    [:dvi, :ps, :pdf, :clean, :distclean].each do |sym|
+    (PRODUCT_FILE_TYPE + [:clean, :distclean]).each do |sym|
       define_method(sym) do |target|
         execute_command(sym, target)
       end
@@ -124,6 +126,9 @@ class LaTeXProjectTemplate
       desc "Create snapshot file."
       task :snapshot, [:type] do |t, args|
         type = args.type ? args.type.intern : :pdf
+        unless Latexmk::PRODUCT_FILE_TYPE.include?(type)
+          raise "Invalid type of file: #{type}."
+        end
         Rake::Task[type].execute
         path = FileName.create(@target, :add => :prohibit, :extension => ".#{type}")
         snapshot_path = FileName.create("snapshot", File.basename(path),
