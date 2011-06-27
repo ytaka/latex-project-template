@@ -40,19 +40,19 @@ class LaTeXProjectTemplate
       @command = {}
 
       set(:dvi) do |target|
-        "#{@latexmk} -dvi #{target}"
+        "#{@path} -dvi #{target}"
       end
       set(:ps) do |target|
-        "#{@latexmk} -ps #{target}"
+        "#{@path} -ps #{target}"
       end
       set(:pdf) do |target|
-        "#{@latexmk} -pdf #{target}"
+        "#{@path} -pdf #{target}"
       end
       set(:clean) do |target|
-        "#{@latexmk} -c"
+        "#{@path} -c"
       end
       set(:distclean) do |target|
-        "#{@latexmk} -C"
+        "#{@path} -C"
       end
     end
 
