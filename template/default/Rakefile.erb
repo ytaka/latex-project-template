@@ -1,17 +1,14 @@
-require 'latex_project_template/task'
-
 MAIN_TEX_FILE = "<%= @main_tex_file %>"
 
-LaTeXProjectTemplate::Task.new(MAIN_TEX_FILE) do |task|
-  # task.latexmk.path = '/usr/bin/latexmk'
-  # task.clean.include("#*#")
-end
+require 'latex_project_template/task'
 
-desc "Create snapshot pdf"
-task :snapshot => :pdf do |t|
-  pdf_path = FileName.create(MAIN_TEX_FILE, :add => :prohibit, :extension => '.pdf')
-  snapshot_path = FileName.create("snapshot", File.basename(pdf_path), :type => :time, :directory => :parent,
-                                  :position => :middle, :delimiter => '', :add => :always,
-                                  :format => "%Y%m%d_%H%M%S")
-  move(pdf_path, snapshot_path)
+LaTeXProjectTemplate::Task.new(MAIN_TEX_FILE) do |task|
+  # * Set the path of latexmk
+  # task.latexmk.path = '/usr/bin/latexmk'
+  # 
+  # * Add patterns to clean temporary files
+  # task.clean.include("#*#")
+  # 
+  # * Default task to compile tex file. You can set :dvi, :ps, or :pdf. The default is :pdf.
+  # task.default = :dvi
 end

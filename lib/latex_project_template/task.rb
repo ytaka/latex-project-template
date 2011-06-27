@@ -120,6 +120,17 @@ class LaTeXProjectTemplate
       task :pdf => [@target] do |t|
         @latexmk.pdf(@target)
       end
+
+      desc "Create snapshot file."
+      task :snapshot, [:type] do |t, args|
+        type = args.type ? args.type.intern : :pdf
+        Rake::Task[type].execute
+        path = FileName.create(@target, :add => :prohibit, :extension => ".#{type}")
+        snapshot_path = FileName.create("snapshot", File.basename(path),
+                                        :type => :time, :directory => :parent, :position => :middle,
+                                        :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
+        move(pdf_path, snapshot_path)
+      end
     end
   end
 end
