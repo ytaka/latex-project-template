@@ -104,29 +104,54 @@ class LaTeXProjectTemplate
       end
       if File.exist?(path)
         move(path, snapshot_path)
+        return snapshot_path
       end
+      nil
     end
     private :snapshot_of_current
 
-    def snapshot_of_commit(type, commit)
+    def commit_date(commit)
+      log_data = `git log --date=iso -1 #{commit}`
+      if $? == 0
+        require 'time'
+        l = log_data.split("\n").find { |s| /^Date:.*$/ =~ s }
+        Time.parse(l.sub("Date:", ''))
+      else
+        nil
+      end
+    end
+    private :commit_date
+
+    def extract_source(commit)
       source_directory = FileName.create('src', :type => :time, :directory => :self, :add => :always)
-      path = FileName.create(source_directory, File.basename(@target), :add => :prohibit, :extension => ".#{type}")
-      snapshot_path = FileName.create("snapshot", File.basename(path),
-                                      :type => :time, :directory => :parent, :position => :middle,
-                                      :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
       c = "git archive --format=tar #{commit} | tar -C #{source_directory} -xf -"
       system(c)
-      cd source_directory
-      begin
-        sh "rake #{type}"
-      rescue
-        $stderr.puts "Can not compile: #{source_directory}"
+      source_directory
+    end
+    private :extract_source
+
+    def snapshot_of_commit(type, commit)
+      if date = commit_date(commit)
+        source_directory = extract_source(commit)
+        path = FileName.create(source_directory, File.basename(@target), :add => :prohibit, :extension => ".#{type}")
+        path_base = File.basename(path).sub(/\.#{type}$/, "_#{date.strftime("%Y%m%d_%H%M%S")}.#{type}")
+        snapshot_path = FileName.create("snapshot", path_base, :directory => :parent, :position => :middle)
+        cd source_directory
+        begin
+          sh "rake #{type}"
+        rescue
+          $stderr.puts "Can not compile. Please edit files in #{source_directory}."
+        end
+        if File.exist?(path)
+          move(path, snapshot_path)
+          cd '..'
+          rm_r source_directory
+          return snapshot_path
+        end
+      else
+        $stderr.puts "The commit '#{commit}' does not exist."
       end
-      if File.exist?(path)
-        move(path, snapshot_path)
-        cd '..'
-        rm_r source_directory
-      end
+      nil
     end
     private :snapshot_of_commit
 
@@ -168,9 +193,31 @@ class LaTeXProjectTemplate
           raise "Invalid type of file: #{type}."
         end
         if commit = args.commit
-          snapshot_of_commit(type, commit)
+          path = snapshot_of_commit(type, commit)
         else
-          snapshot_of_current(type)
+          path = snapshot_of_current(type)
+        end
+        if path
+          $stdout.puts "Save to #{path}"
+        else
+          $stdout.puts "We can not create a file."
+        end
+      end
+
+      desc "Create source of particular commit."
+      task :source, [:commit] do |t, args|
+        if commit = args.commit
+          if date = commit_date(commit)
+            if source_directory = extract_source(commit)
+              $stdout.puts "Save to #{source_directory}"
+            else
+              $stdout.puts "We can not create directory of source files."
+            end
+          else
+            $stderr.puts "The commit '#{commit}' does not exist."
+          end
+        else
+          $stderr.puts "Please set commit."
         end
       end
     end
