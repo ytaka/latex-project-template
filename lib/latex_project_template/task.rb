@@ -92,6 +92,44 @@ class LaTeXProjectTemplate
       define_task
     end
 
+    def snapshot_of_current(type)
+      path = FileName.create(@target, :add => :prohibit, :extension => ".#{type}")
+      snapshot_path = FileName.create("snapshot", File.basename(path),
+                                      :type => :time, :directory => :parent, :position => :middle,
+                                      :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
+      begin
+        Rake::Task[type].execute
+      rescue
+        $stderr.puts "Can not compile"
+      end
+      if File.exist?(path)
+        move(path, snapshot_path)
+      end
+    end
+    private :snapshot_of_current
+
+    def snapshot_of_commit(type, commit)
+      source_directory = FileName.create('src', :type => :time, :directory => :self, :add => :always)
+      path = FileName.create(source_directory, File.basename(@target), :add => :prohibit, :extension => ".#{type}")
+      snapshot_path = FileName.create("snapshot", File.basename(path),
+                                      :type => :time, :directory => :parent, :position => :middle,
+                                      :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
+      c = "git archive --format=tar #{commit} | tar -C #{source_directory} -xf -"
+      system(c)
+      cd source_directory
+      begin
+        sh "rake #{type}"
+      rescue
+        $stderr.puts "Can not compile: #{source_directory}"
+      end
+      if File.exist?(path)
+        move(path, snapshot_path)
+        cd '..'
+        rm_r source_directory
+      end
+    end
+    private :snapshot_of_commit
+
     def define_task
       desc "Default task"
       task :default => @default
@@ -124,17 +162,16 @@ class LaTeXProjectTemplate
       end
 
       desc "Create snapshot file."
-      task :snapshot, [:type] do |t, args|
-        type = args.type ? args.type.intern : :pdf
+      task :snapshot, [:type,:commit] do |t, args|
+        type = args.type && args.type.size > 0 ? args.type.intern : :pdf
         unless Latexmk::PRODUCT_FILE_TYPE.include?(type)
           raise "Invalid type of file: #{type}."
         end
-        Rake::Task[type].execute
-        path = FileName.create(@target, :add => :prohibit, :extension => ".#{type}")
-        snapshot_path = FileName.create("snapshot", File.basename(path),
-                                        :type => :time, :directory => :parent, :position => :middle,
-                                        :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
-        move(path, snapshot_path)
+        if commit = args.commit
+          snapshot_of_commit(type, commit)
+        else
+          snapshot_of_current(type)
+        end
       end
     end
   end
