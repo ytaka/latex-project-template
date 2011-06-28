@@ -1,5 +1,8 @@
 MAIN_TEX_FILE = "<%= @main_tex_file %>"
 
+# * Set environmental variables
+# ENV['BIBINPUTS'] = ".:#{File.join(ENV["HOME"], "bibtex")}"
+
 require 'latex_project_template/task'
 
 LaTeXProjectTemplate::Task.new(MAIN_TEX_FILE) do |task|
