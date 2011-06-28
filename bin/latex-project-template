@@ -4,7 +4,9 @@ require_relative '../lib/latex_project_template'
 require 'optparse'
 
 help_message =<<HELP
-Usage: #{File.basename(__FILE__)} project template
+Usage: #{File.basename(__FILE__)} project [template]
+       #{File.basename(__FILE__)} --list
+       #{File.basename(__FILE__)} --delete template
 HELP
 
 options = {
@@ -46,12 +48,19 @@ when :list
     $stdout.puts template
   end
 when :delete
-  template = ARGV[0]
-  LaTeXProjectTemplate::Configuration.new.delete_template(template)
+  if template = ARGV[0]
+    LaTeXProjectTemplate::Configuration.new.delete_template(template)
+  else
+    $stderr.puts "Please set template name."
+    $stderr.puts help_message
+    exit(1)
+  end
 when :create
   dir = ARGV[0]
-  template = ARGV[1]
-  if dir && template
+  template = ARGV[1] || 'default'
+  if dir
     LaTeXProjectTemplate.new(dir, template).create
+  else
+    exit(1)
   end
 end
