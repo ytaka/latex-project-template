@@ -88,8 +88,17 @@ class LaTeXProjectTemplate
       define_task
     end
 
+    def extension_from_command_type(type)
+      if /^pdf/ =~ type.to_s
+        ".pdf"
+      else
+        ".#{type.to_s}"
+      end
+    end
+    private :extension_from_command_type
+
     def snapshot_of_current(type)
-      path = FileName.create(@target, :add => :prohibit, :extension => ".#{type}")
+      path = FileName.create(@target, :add => :prohibit, :extension => extension_from_command_type(type))
       snapshot_path = FileName.create("snapshot", File.basename(path),
                                       :type => :time, :directory => :parent, :position => :middle,
                                       :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
@@ -129,7 +138,7 @@ class LaTeXProjectTemplate
     def snapshot_of_commit(type, commit)
       if date = commit_date(commit)
         source_directory = extract_source(commit)
-        path = FileName.create(source_directory, File.basename(@target), :add => :prohibit, :extension => ".#{type}")
+        path = FileName.create(source_directory, File.basename(@target), :add => :prohibit, :extension => extension_from_command_type(type))
         path_base = File.basename(path).sub(/\.#{type}$/, "_#{date.strftime("%Y%m%d_%H%M%S")}.#{type}")
         snapshot_path = FileName.create("snapshot", path_base, :directory => :parent, :position => :middle)
         cd source_directory
