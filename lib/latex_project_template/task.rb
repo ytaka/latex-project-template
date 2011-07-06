@@ -32,7 +32,7 @@ class LaTeXProjectTemplate
   end
 
   class Latexmk
-    PRODUCT_FILE_TYPE = [:dvi, :ps, :pdf]
+    COMMAND_TO_PRODUCE_FILE = [:dvi, :ps, :pdf, :pdfdvi, :pdfps]
 
     include Rake::DSL
 
@@ -42,14 +42,10 @@ class LaTeXProjectTemplate
       @path = 'latexmk'
       @command = {}
 
-      set(:dvi) do |target|
-        "#{@path} -dvi #{target}"
-      end
-      set(:ps) do |target|
-        "#{@path} -ps #{target}"
-      end
-      set(:pdf) do |target|
-        "#{@path} -pdf #{target}"
+      COMMAND_TO_PRODUCE_FILE.each do |type|
+        set(type) do |target|
+          "#{@path} -#{type.to_s} #{target}"
+        end
       end
       set(:clean) do |target|
         "#{@path} -c"
@@ -73,7 +69,7 @@ class LaTeXProjectTemplate
       end
     end
 
-    (PRODUCT_FILE_TYPE + [:clean, :distclean]).each do |sym|
+    (COMMAND_TO_PRODUCE_FILE + [:clean, :distclean]).each do |sym|
       define_method(sym) do |target|
         execute_command(sym, target)
       end
@@ -171,26 +167,18 @@ class LaTeXProjectTemplate
         @clean.clean
       end
 
-      desc "Create dvi."
-      task :dvi => [@target] do |t|
-        @latexmk.dvi(@target)
-      end
-
-      desc "Create ps."
-      task :ps => [@target] do |t|
-        @latexmk.ps(@target)
-      end
-
-      desc "Create pdf."
-      task :pdf => [@target] do |t|
-        @latexmk.pdf(@target)
+      Latexmk::COMMAND_TO_PRODUCE_FILE.each do |type|
+        desc "Create #{type.to_s}."
+        task type => [@target] do |t|
+          @latexmk.__send__(type, @target)
+        end
       end
 
       desc "Create snapshot file."
       task :snapshot, [:type,:commit] do |t, args|
         type = args.type && args.type.size > 0 ? args.type.intern : :pdf
-        unless Latexmk::PRODUCT_FILE_TYPE.include?(type)
-          raise "Invalid type of file: #{type}."
+        unless Latexmk::COMMAND_TO_PRODUCE_FILE.include?(type)
+          raise "Invalid option to produce file: #{type}."
         end
         if commit = args.commit
           path = snapshot_of_commit(type, commit)
