@@ -42,7 +42,7 @@ end
 
 case options[:mode]
 when :init
-  LaTeXProjectTemplate::Configuration.new.init_config
+  LaTeXProjectTemplate::Configuration.create_new_config(ENV['root'])
 when :list
   LaTeXProjectTemplate::Configuration.new.list_template.each do |template|
     $stdout.puts template

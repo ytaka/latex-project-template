@@ -2,59 +2,58 @@ require 'fileutils'
 require 'erb'
 require 'git'
 require 'filename'
+require 'user_config'
 
 class LaTeXProjectTemplate
-  DEFAULT_CONFIG = "~/.latex_project_template"
+  DEFAULT_CONFIG = ".latex_project_template"
+
+  class LPTConfig < UserConfig
+  end
 
   class Configuration
-    def initialize(path = DEFAULT_CONFIG)
-      @path = File.expand_path(path)
+    def self.create_new_config(home_path = nil)
+      config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path)
+      dir = config.directory
+      Dir.glob("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}/*").each do |d|
+        FileUtils.cp_r(d, dir)
+      end
     end
 
-    def init_config(path = DEFAULT_CONFIG)
-      FileUtils.mkdir_p(@path)
-      Dir.glob("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}/*").each do |d|
-        FileUtils.cp_r(d, @path)
-      end
+    def initialize(home_path)
+      @config = UserConfig.new(DEFAULT_CONFIG, :home => home_path)
+    end
+
+    def config_directory
+      @config.directory
     end
 
     def list_template
-      Dir.entries(@path).delete_if do |d|
-        /^\.+$/ =~ d
-      end.sort
+      @config.list_in_directory
     end
 
     def template_exist?(template)
-      path = File.join(@path, template)
-      if File.exist?(path)
-        path
-      else
-        nil
-      end
+      @config.exist?(file_path(template))
     end
 
     def template_file(template, name)
-      path = File.join(@path, template, name)
-      unless File.exist?(path)
-        path = File.join(@path, 'default', name)
-        unless File.exist?(path)
-          path = nil
-        end
+      unless path = @config.template_exist?(File.join(template, name))
+        path = @config.template_exist?(File.join('default', name))
       end
       path
     end
 
     def delete_template(template)
-      if path = template_exist?(template)
-        FileUtils.rm_r(path)
+      if String === template && template.size > 0
+        @config.delete(template)
+      else
+        raise ArgumentError, "Invalid template name to delete: #{template.inspect}"
       end
     end
-
   end
 
 
-  def initialize(dir, template, config = DEFAULT_CONFIG)
-    @config = LaTeXProjectTemplate::Configuration.new(config)
+  def initialize(dir, template, config_root = nil)
+    @config = LaTeXProjectTemplate::Configuration.new(config_root)
     if @config.template_exist?(template)
       @dir = File.expand_path(dir)
       @template = template
