@@ -24,6 +24,9 @@ begin
     opt.on("--init", "Initialize configuration directory.") do |v|
       options[:mode] = :init
     end
+    opt.on("--home DIR", "Set the directory having '.latex_project_template'.") do |v|
+      options[:home] = v
+    end
     opt.parse!(ARGV)
   end
 rescue OptionParser::InvalidOption
@@ -42,14 +45,14 @@ end
 
 case options[:mode]
 when :init
-  LaTeXProjectTemplate::Configuration.create_new_config(ENV['root'])
+  LaTeXProjectTemplate::Configuration.create_new_config(options[:home])
 when :list
-  LaTeXProjectTemplate::Configuration.new.list_template.each do |template|
+  LaTeXProjectTemplate::Configuration.new(options[:home]).list_template.each do |template|
     $stdout.puts template
   end
 when :delete
   if template = ARGV[0]
-    LaTeXProjectTemplate::Configuration.new.delete_template(template)
+    LaTeXProjectTemplate::Configuration.new(options[:home]).delete_template(template)
   else
     $stderr.puts "Please set template name."
     $stderr.puts help_message
@@ -59,7 +62,7 @@ when :create
   dir = ARGV[0]
   template = ARGV[1] || 'default'
   if dir
-    LaTeXProjectTemplate.new(dir, template).create
+    LaTeXProjectTemplate.new(dir, template, options[:home]).create
   else
     exit(1)
   end
