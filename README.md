@@ -30,6 +30,27 @@ We can install by rubygems.
 
     gem install latex-project-template
 
+## Usage
+
+If we install latex-project-template, we can use the command 'latex-project-template'.
+First of all, we create configuration directory ~/.latex\_project\_template.
+
+    latex-project-template --init
+
+Next, we edit template files in ~/.latex\_project\_template.
+If we want to create latex project 'new_project' fromo 'default' template, type
+
+    latex-project-template new_project
+
+If we want to create from other template (for example, 'japanese'),
+we type next command.
+
+    latex-project-template new_project japanese
+
+To list templates in ~/.latex\_project\_template, we type
+
+    latex-project-template --list
+
 ## Special notations of template file names
 
 \_\_IMPORT\_\_
