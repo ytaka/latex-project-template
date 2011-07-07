@@ -180,7 +180,7 @@ class LaTeXProjectTemplate
     git = Git.init(@target_dir)
     files = create_files
     git.add
-    git.commit("Copy template '#{@template.name}'.")
+    git.commit("Copy template: #{@template.name}.")
     if io = opts[:io]
       files.map! do |path|
         path.sub!(@target_dir, '')
