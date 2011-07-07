@@ -14,40 +14,38 @@ class LaTeXProjectTemplate
     def self.create_new_config(home_path = nil)
       config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path)
       dir = config.directory
-      Dir.glob("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}/*").each do |d|
-        FileUtils.cp_r(d, dir)
-      end
+      FileUtils.cp_r("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}", dir)
     end
 
     def initialize(home_path)
-      @config = UserConfig.new(DEFAULT_CONFIG, :home => home_path)
+      @user_config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path)
     end
 
     def config_directory
-      @config.directory
+      @user_config.directory
     end
 
     def list_template
-      @config.list_in_directory('.')
+      @user_config.list_in_directory('template')
     end
 
     def template_exist?(template)
-      if path = @config.exist?(template)
+      if path = @user_config.exist?(File.join('template', template))
         return LaTeXProjectTemplate::Directory.new(path)
       end
       false
     end
 
     def template_file(template, name)
-      unless path = @config.template_exist?(File.join(template, name))
-        path = @config.template_exist?(File.join('default', name))
+      unless path = @user_config.template_exist?(File.join(template, name))
+        path = @user_config.template_exist?(File.join('default', name))
       end
       path
     end
 
     def delete_template(template)
       if String === template && template.size > 0
-        @config.delete(template)
+        @user_config.delete(File.join('template', template))
       else
         raise ArgumentError, "Invalid template name to delete: #{template.inspect}"
       end
