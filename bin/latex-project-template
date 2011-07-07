@@ -10,7 +10,7 @@ Usage: #{File.basename(__FILE__)} project [template]
 
 HELP
 
-Version = '0.0.1'
+Version = '0.0.2'
 
 options = {
   :mode => :create
