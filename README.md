@@ -54,13 +54,13 @@ To list templates in ~/.latex\_project\_template, we type
 ## Special notations of template file names
 
 \_\_IMPORT\_\_
-:In \_\_IMPORT\_\_ we write list of files to import from other template.
+: In \_\_IMPORT\_\_ we write list of files to import from other template.
 \_\_PROJECT\_\_
-:Replace \_\_PROJECT\_\_ by name of project.
+: Replace \_\_PROJECT\_\_ by name of project.
 \_\_DOT\_\_
-:Replace \_\_DOT\_\_ by '.'.
+: Replace \_\_DOT\_\_ by '.'.
 \_\_IGNORE\_\_
-:Files including \_\_IGNORE\_\_ are ignored.
+: Files including \_\_IGNORE\_\_ are ignored.
 
 ## Contributing to latex-project-template
  
