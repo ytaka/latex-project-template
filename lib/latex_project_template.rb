@@ -22,6 +22,9 @@ class LaTeXProjectTemplate
       Dir.glob(File.expand_path(File.join(File.dirname(__FILE__), '../initial_files/*'))).each do |path|
         FileUtils.cp_r(path, dir)
       end
+      git = Git.init(dir)
+      git.add
+      git.commit("Create initial template.")
     end
 
     def initialize(home_path)
