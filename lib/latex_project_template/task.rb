@@ -4,7 +4,7 @@ require 'filename'
 
 class LaTeXProjectTemplate
   class Cleaning
-    include Rake::DSL
+    include Rake::DSL if defined?(Rake::DSL)
 
     attr_reader :temporary, :product, :pattern
 
@@ -34,7 +34,7 @@ class LaTeXProjectTemplate
   class Latexmk
     COMMAND_TO_PRODUCE_FILE = [:dvi, :ps, :pdf, :pdfdvi, :pdfps]
 
-    include Rake::DSL
+    include Rake::DSL if defined?(Rake::DSL)
 
     attr_accessor :path
 
