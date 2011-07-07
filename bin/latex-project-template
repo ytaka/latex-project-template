@@ -7,7 +7,10 @@ help_message =<<HELP
 Usage: #{File.basename(__FILE__)} project [template]
        #{File.basename(__FILE__)} --list
        #{File.basename(__FILE__)} --delete template
+
 HELP
+
+Version = '0.0.1'
 
 options = {
   :mode => :create
