@@ -13,16 +13,14 @@ class LaTeXProjectTemplate
   class Configuration
     TEMPLATE_DIRECTORY = 'template'
     VARIABLE_DIRECTORY = 'variable'
+    COMPONENT_DIRECTORY = 'component'
     DEFAULT_PROFILE_YAML = { :name => "Your Name" }
 
     def self.create_new_config(home_path = nil)
       config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path)
       dir = config.directory
-      FileUtils.cp_r("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}", dir)
-      vars_dir = File.join(dir, VARIABLE_DIRECTORY)
-      FileUtils.mkdir_p(vars_dir)
-      open(File.join(vars_dir, 'profile.yaml'), 'w') do |f|
-        f.print DEFAULT_PROFILE_YAML.to_yaml
+      Dir.glob(File.expand_path(File.join(File.dirname(__FILE__), '../initial_files/*'))).each do |path|
+        FileUtils.cp_r(path, dir)
       end
     end
 
@@ -67,6 +65,32 @@ class LaTeXProjectTemplate
         end
       end
       vars
+    end
+
+    def component(name)
+      if path = @user_config.exist?(File.join(COMPONENT_DIRECTORY, name))
+        return LaTeXProjectTemplate::Component.new(path)
+      end
+      nil
+    end
+  end
+
+  class Component
+    attr_reader :path
+
+    def initialize(path)
+      @path = path
+    end
+
+    def evaluate(erb_obj)
+      if /\.erb$/ =~ @path
+        erb_obj.instance_exec(@path) do |path|
+          erb = ERB.new(File.read(path))
+          erb.result(binding)
+        end
+      else
+        File.read(@path)
+      end
     end
   end
 
@@ -162,10 +186,22 @@ class LaTeXProjectTemplate
   class ErbObject
     attr_reader :project_name
 
-    def initialize(project_name, variables)
+    def initialize(project_name, variables, config)
       @project_name = project_name
+      @__config = config
       variables.each do |key, val|
         instance_variable_set("@#{key}", val)
+        self.class.class_eval do
+          attr_reader key.intern
+        end
+      end
+    end
+
+    def component(name)
+      if c = @__config.component(name)
+        c.evaluate(self)
+      else
+        ''
       end
     end
   end
@@ -183,7 +219,7 @@ class LaTeXProjectTemplate
   end
 
   def create_files
-    erb_obj = LaTeXProjectTemplate::ErbObject.new(@project_name, @config.user_variables)
+    erb_obj = LaTeXProjectTemplate::ErbObject.new(@project_name, @config.user_variables, @config)
     created_files = @template.copy_to_directory(@target_dir, erb_obj)
     @template.files_to_import.each do |name, files|
       if template_to_import = @config.template_exist?(name)

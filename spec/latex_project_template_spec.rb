@@ -13,6 +13,10 @@ describe LaTeXProjectTemplate::Configuration do
   it "should create directory." do
     LaTeXProjectTemplate::Configuration.create_new_config(@home_directory)
     File.directory?(@home_directory).should be_true
+    dir = File.join(@home_directory_absolute, '.latex_project_template')
+    File.exist?(File.join(dir, 'template')).should be_true
+    File.exist?(File.join(dir, 'variable')).should be_true
+    File.exist?(File.join(dir, 'component')).should be_true
   end
 
   it "should return config directory." do

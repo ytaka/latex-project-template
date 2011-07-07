@@ -1,7 +1,8 @@
 \documentclass[a4paper]{article}
-\usepackage{amsmath, amsfonts, amsthm}
 
-\author{<%= @profile[:name] %>}
+<%= component('math_preamble.tex') %>
+
+\author{<%= profile[:name] %>}
 \date{}
 
 \begin{document}
