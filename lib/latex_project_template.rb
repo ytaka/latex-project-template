@@ -70,17 +70,16 @@ class LaTeXProjectTemplate
     end
     private :create_directory_if_needed
 
-    def target_path(target_dir, target_name)
-      if /\/__DOT__/ =~ target_name
-        target_name = target_name.sub(/\/__DOT__/, '/.')
-      end
+    def target_path(project_name, target_dir, target_name)
+      target_name = target_name.gsub(/__DOT__/, '/.')
+      target_name = target_name.gsub(/__PROJECT__/, project_name)
       File.join(target_dir, target_name.sub(/^#{Regexp.escape(@path)}/, ''))
     end
     private :target_path
 
     # Create file of which name is created by removing '.erb' from name of original file
-    def create_erb_template(erb_file, erb_obj, target_dir)
-      erb_obj.instance_exec(erb_file, target_path(target_dir, erb_file.sub(/\.erb$/, ''))) do |path, out|
+    def create_erb_template(erb_file, erb_obj, project_name, target_dir)
+      erb_obj.instance_exec(erb_file, target_path(project_name, target_dir, erb_file.sub(/\.erb$/, ''))) do |path, out|
         erb = ERB.new(File.read(path))
         open(out, 'w') do |f|
           f.print erb.result(binding)
@@ -108,9 +107,9 @@ class LaTeXProjectTemplate
         else
           case file
           when /\.erb$/
-            create_erb_template(file, erb_binding_obj, target_dir)
+            create_erb_template(file, erb_binding_obj, erb_binding_obj.project_name, target_dir)
           else
-            FileUtils.cp(file, target_path(target_dir, file))
+            FileUtils.cp(file, target_path(erb_binding_obj.project_name, target_dir, file))
           end
         end
       end
@@ -132,6 +131,14 @@ class LaTeXProjectTemplate
     end
   end
 
+  class ErbObject
+    attr_reader :project_name
+
+    def initialize(project_name)
+      @project_name = project_name
+    end
+  end
+
   def initialize(dir, template, home_directory = nil)
     @config = LaTeXProjectTemplate::Configuration.new(home_directory)
     @target_dir = File.expand_path(dir)
@@ -145,8 +152,7 @@ class LaTeXProjectTemplate
   end
 
   def create_files
-    erb_obj = Object.new
-    erb_obj.instance_variable_set(:@project_name, @project_name)
+    erb_obj = LaTeXProjectTemplate::ErbObject.new(@project_name)
     @template.copy_to_directory(@target_dir, erb_obj)
     @template.files_to_import.each do |name, files|
       if template_to_import = @config.template_exist?(name)

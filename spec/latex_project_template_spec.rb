@@ -51,8 +51,8 @@ describe LaTeXProjectTemplate do
     template.create
   end
 
-  it "should copy 'article' template." do
-    template = LaTeXProjectTemplate.new(File.join(@home_directory, 'new_article'), 'article', @home_directory)
+  it "should copy 'japanese' template." do
+    template = LaTeXProjectTemplate.new(File.join(@home_directory, 'new_japanese'), 'japanese', @home_directory)
     template.create
   end
 
