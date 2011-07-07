@@ -62,7 +62,7 @@ when :create
   dir = ARGV[0]
   template = ARGV[1] || 'default'
   if dir
-    LaTeXProjectTemplate.new(dir, template, options[:home]).create($stdout)
+    LaTeXProjectTemplate.new(dir, template, options[:home]).create(:io => $stdout)
   else
     exit(1)
   end
