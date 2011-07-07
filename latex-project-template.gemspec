@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
     "Rakefile",
     "VERSION",
     "bin/latex-project-template",
+    "latex-project-template.gemspec",
     "lib/latex_project_template.rb",
     "lib/latex_project_template/task.rb",
     "spec/latex_project_template_spec.rb",
