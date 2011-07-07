@@ -11,10 +11,19 @@ class LaTeXProjectTemplate
   end
 
   class Configuration
+    TEMPLATE_DIRECTORY = 'template'
+    VARIABLE_DIRECTORY = 'variable'
+    DEFAULT_PROFILE_YAML = { :name => "Your Name" }
+
     def self.create_new_config(home_path = nil)
       config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path)
       dir = config.directory
       FileUtils.cp_r("#{File.expand_path(File.join(File.dirname(__FILE__), '../template/'))}", dir)
+      vars_dir = File.join(dir, VARIABLE_DIRECTORY)
+      FileUtils.mkdir_p(vars_dir)
+      open(File.join(vars_dir, 'profile.yaml'), 'w') do |f|
+        f.print DEFAULT_PROFILE_YAML.to_yaml
+      end
     end
 
     def initialize(home_path)
@@ -26,29 +35,38 @@ class LaTeXProjectTemplate
     end
 
     def list_template
-      @user_config.list_in_directory('template')
+      @user_config.list_in_directory(TEMPLATE_DIRECTORY)
     end
 
+    def user_config_template_path(template_name)
+      File.join(TEMPLATE_DIRECTORY, template_name)
+    end
+    private :user_config_template_path
+
     def template_exist?(template)
-      if path = @user_config.exist?(File.join('template', template))
+      if path = @user_config.exist?(user_config_template_path(template))
         return LaTeXProjectTemplate::Directory.new(path)
       end
       false
     end
 
-    def template_file(template, name)
-      unless path = @user_config.template_exist?(File.join(template, name))
-        path = @user_config.template_exist?(File.join('default', name))
-      end
-      path
-    end
-
     def delete_template(template)
       if String === template && template.size > 0
-        @user_config.delete(File.join('template', template))
+        @user_config.delete(user_config_template_path(template))
       else
         raise ArgumentError, "Invalid template name to delete: #{template.inspect}"
       end
+    end
+
+    def user_variables
+      vars = {}
+      if dir = @user_config.exist?('variable')
+        Dir.glob(File.join(dir, '*.yaml')).each do |yaml_path|
+          key = File.basename(yaml_path).sub(/\.yaml$/, '').intern
+          vars[key] = YAML.load_file(yaml_path)
+        end
+      end
+      vars
     end
   end
 
@@ -144,8 +162,11 @@ class LaTeXProjectTemplate
   class ErbObject
     attr_reader :project_name
 
-    def initialize(project_name)
+    def initialize(project_name, variables)
       @project_name = project_name
+      variables.each do |key, val|
+        instance_variable_set("@#{key}", val)
+      end
     end
   end
 
@@ -162,7 +183,7 @@ class LaTeXProjectTemplate
   end
 
   def create_files
-    erb_obj = LaTeXProjectTemplate::ErbObject.new(@project_name)
+    erb_obj = LaTeXProjectTemplate::ErbObject.new(@project_name, @config.user_variables)
     created_files = @template.copy_to_directory(@target_dir, erb_obj)
     @template.files_to_import.each do |name, files|
       if template_to_import = @config.template_exist?(name)

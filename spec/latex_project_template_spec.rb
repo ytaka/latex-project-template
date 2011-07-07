@@ -33,6 +33,12 @@ describe LaTeXProjectTemplate::Configuration do
     subject.template_exist?('not_exist').should be_false
   end
 
+  it "should return profile" do
+    vars = subject.user_variables
+    vars.should be_an_instance_of Hash
+    vars[:profile][:name].should == "Your Name"
+  end
+
   after(:all) do
     FileUtils.rm_r(@home_directory)
   end
