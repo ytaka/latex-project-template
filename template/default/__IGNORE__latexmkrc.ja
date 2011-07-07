@@ -1,0 +1,6 @@
+$latex  = 'platex';
+$latex_silent = 'platex -interaction=batchmode';
+$bibtex = 'jbibtex';
+$dvips  = 'dvipsk';
+$dvipdf = 'dvipdfmx %O -o %D %S';
+$dvi_previewer ='xdvi';

@@ -28,11 +28,14 @@ class LaTeXProjectTemplate
     end
 
     def list_template
-      @config.list_in_directory
+      @config.list_in_directory('.')
     end
 
     def template_exist?(template)
-      @config.exist?(file_path(template))
+      if path = @config.exist?(template)
+        return LaTeXProjectTemplate::Directory.new(path)
+      end
+      false
     end
 
     def template_file(template, name)
@@ -51,46 +54,112 @@ class LaTeXProjectTemplate
     end
   end
 
-
-  def initialize(dir, template, config_root = nil)
-    @config = LaTeXProjectTemplate::Configuration.new(config_root)
-    if @config.template_exist?(template)
-      @dir = File.expand_path(dir)
-      @template = template
-      @main_tex_file = File.basename(dir).sub(/\/$/, '') + ".tex"
-    else
-      raise "Can not find template: #{@template}"
+  class Directory
+    def initialize(path)
+      @path = File.expand_path(path)
     end
-  end
 
-  def copy_default_to_dir(name, to = nil, io = nil)
-    if path = @config.template_file(@template, name)
-      FileUtils.cp_r(path, File.join(@dir, to || name))
+    def create_directory_if_needed(target_dir)
+      if File.exist?(target_dir)
+        unless File.directory?(target_dir)
+          raise "Can not create directory: #{target_dir}"
+        end
+      else
+        File.mkdir_p(target_dir)
+      end
     end
-  end
-  private :copy_default_to_dir
+    private :create_directory_if_needed
 
-  def create_rakefile
-    if rakefile_erb = @config.template_file(@template, "Rakefile.erb")
-      obj = Object.new
-      obj.instance_variable_set(:@main_tex_file, @main_tex_file)
-      obj.instance_exec(rakefile_erb, File.join(@dir, 'Rakefile')) do |path, out|
+    def target_path(target_dir, target_name)
+      if /\/__DOT__/ =~ target_name
+        target_name = target_name.sub(/\/__DOT__/, '/.')
+      end
+      File.join(target_dir, target_name.sub(/^#{Regexp.escape(@path)}/, ''))
+    end
+    private :target_path
+
+    # Create file of which name is created by removing '.erb' from name of original file
+    def create_erb_template(erb_file, erb_obj, target_dir)
+      erb_obj.instance_exec(erb_file, target_path(target_dir, erb_file.sub(/\.erb$/, ''))) do |path, out|
         erb = ERB.new(File.read(path))
         open(out, 'w') do |f|
           f.print erb.result(binding)
         end
       end
     end
+    private :create_erb_template
+
+    IGNORE_FILE_REGEXP = /\/(__IMPORT__$|__IGNORE__)/
+
+    def copy_to_directory(target_dir, erb_binding_obj, files = nil)
+      create_directory_if_needed(target_dir)
+      if files
+        file_list = files.map do |file_path|
+          File.join(@path, file_path)
+        end
+      else
+        file_list = Dir.glob(File.join(@path, '**', '*')).sort
+      end
+      file_list.each do |file|
+        next if IGNORE_FILE_REGEXP =~ file
+        create_directory_if_needed(File.dirname(file))
+        if File.directory?(file)
+          FileUtils.mkdir_p(file)
+        else
+          case file
+          when /\.erb$/
+            create_erb_template(file, erb_binding_obj, target_dir)
+          else
+            FileUtils.cp(file, target_path(target_dir, file))
+          end
+        end
+      end
+    end
+
+    def files_to_import
+      import = Hash.new { |h, k| h[k] = [] }
+      import_list_path = File.join(@path, '__IMPORT__')
+      if File.exist?(import_list_path)
+        File.read(import_list_path).each_line do |l|
+          l.strip!
+          if n = l.index('/')
+            k = l.slice!(0...n)
+            import[k] << l[1..-1]
+          end
+        end
+      end
+      import
+    end
   end
-  private :create_rakefile
+
+  def initialize(dir, template, home_directory = nil)
+    @config = LaTeXProjectTemplate::Configuration.new(home_directory)
+    @target_dir = File.expand_path(dir)
+    unless @template = @config.template_exist?(template)
+      raise ArgumentError, "Can not find template: #{template}"
+    end
+    if File.exist?(@target_dir)
+      raise ArgumentError, "File #{@target_dir} exists."
+    end
+    @project_name = File.basename(dir).sub(/\/$/, '')
+  end
+
+  def create_files
+    erb_obj = Object.new
+    erb_obj.instance_variable_set(:@project_name, @project_name)
+    @template.copy_to_directory(@target_dir, erb_obj)
+    @template.files_to_import.each do |name, files|
+      if template_to_import = @config.template_exist?(name)
+        template_to_import.copy_to_directory(@target_dir, erb_obj, files)
+      end
+    end
+  end
+  private :create_files
 
   def create
-    @dir = FileName.create(@dir, :directory => :self)
-    git = Git.init(@dir)
-    copy_default_to_dir('dot.gitignore', '.gitignore')
-    copy_default_to_dir('latexmk')
-    copy_default_to_dir('template.tex', @main_tex_file)
-    create_rakefile
+    FileUtils.mkdir_p(@target_dir)
+    git = Git.init(@target_dir)
+    create_files
     git.add
     git.commit("Initial commit.")
   end
