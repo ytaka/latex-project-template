@@ -17,14 +17,18 @@ class LaTeXProjectTemplate
     DEFAULT_PROFILE_YAML = { :name => "Your Name" }
 
     def self.create_new_config(home_path = nil)
-      config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path)
-      dir = config.directory
-      Dir.glob(File.expand_path(File.join(File.dirname(__FILE__), '../initial_files/*'))).each do |path|
-        FileUtils.cp_r(path, dir)
+      begin
+        config = LPTConfig.new(DEFAULT_CONFIG, :home => home_path, :new_directory => true)
+        dir = config.directory
+        Dir.glob(File.expand_path(File.join(File.dirname(__FILE__), '../initial_files/*'))).each do |path|
+          FileUtils.cp_r(path, dir)
+        end
+        git = Git.init(dir)
+        git.add
+        git.commit("Create initial template.")
+      rescue UserConfig::DirectoryExistenceError
+        $stderr.puts "Can not new configuration directory."
       end
-      git = Git.init(dir)
-      git.add
-      git.commit("Create initial template.")
     end
 
     def initialize(home_path)
