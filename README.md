@@ -90,7 +90,7 @@ The following strings starting \_\_ and ending \_\_ have special meanings.
 
 ### 'component' directory
 
-Common parts of template files are placed.
+Common parts of template files are placed in 'component' directory.
 In order to import into eruby templates, we use 'component' method.
 If there is 'component/rakefile_common.erb',
 we can use this file in eruby template.
