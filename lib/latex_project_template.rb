@@ -237,19 +237,31 @@ class LaTeXProjectTemplate
   end
   private :create_files
 
-  def create(opts = {})
-    FileUtils.mkdir_p(@target_dir)
+  def create_git
     git = Git.init(@target_dir)
-    files = create_files
     git.add
     git.commit("Copy template: #{@template.name}.")
+  end
+  private :create_git
+
+  # opts[:io] is an IO to which progress are outputed.
+  # If opts[:io] is nil then no outputting.
+  # If opts[:no_git] is true then the project is not managed by git repository.
+  def create(opts = {})
+    FileUtils.mkdir_p(@target_dir)
+    files = create_files
     if io = opts[:io]
-      files.map! do |path|
-        path.sub!(@target_dir, '')
-        path.sub!(/^\//, '')
+      file_paths = files.map do |path|
+        path.sub(@target_dir, '').sub(/^\//, '')
       end
-      io.puts "Create the following files from template '#{@template.name}' and commit to git."
-      io.puts files.join("\n")
+      io.puts "Create the following files from template '#{@template.name}'"
+      io.puts file_paths.join("\n")
+    end
+    if !opts[:no_git]
+      create_git
+      if opts[:io]
+        opts[:io].puts "Create git repository and commit all files."
+      end
     end
   end
 end
