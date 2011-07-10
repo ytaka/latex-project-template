@@ -27,6 +27,9 @@ begin
     opt.on("--init", "Initialize configuration directory.") do |v|
       options[:mode] = :init
     end
+    opt.on("--no-git", "Create project without git repository.") do |v|
+      options[:no_git] = true
+    end
     opt.on("--home DIR", "Set the directory having '.latex_project_template'.") do |v|
       options[:home] = v
     end
@@ -65,7 +68,7 @@ when :create
   dir = ARGV[0]
   template = ARGV[1] || 'default'
   if dir
-    LaTeXProjectTemplate.new(dir, template, options[:home]).create(:io => $stdout)
+    LaTeXProjectTemplate.new(dir, template, options[:home]).create(:io => $stdout, :no_git => options[:no_git])
   else
     exit(1)
   end
