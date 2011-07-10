@@ -57,13 +57,27 @@ describe LaTeXProjectTemplate do
   end
 
   it "should copy 'default' template." do
-    template = LaTeXProjectTemplate.new(File.join(@home_directory, 'new_tex'), 'default', @home_directory)
+    target = File.join(@home_directory, 'new_tex')
+    template = LaTeXProjectTemplate.new(target, 'default', @home_directory)
     template.create
+    File.directory?(target).should be_true
+    File.directory?(File.join(target, '.git')).should be_true
   end
 
   it "should copy 'japanese' template." do
-    template = LaTeXProjectTemplate.new(File.join(@home_directory, 'new_japanese'), 'japanese', @home_directory)
+    target = File.join(@home_directory, 'new_japanese')
+    template = LaTeXProjectTemplate.new(target, 'japanese', @home_directory)
     template.create
+    File.directory?(target).should be_true
+    File.directory?(File.join(target, '.git')).should be_true
+  end
+
+  it "should copy 'default' template without git." do
+    target = File.join(@home_directory, 'new_tex_no_git')
+    template = LaTeXProjectTemplate.new(target, 'default', @home_directory)
+    template.create(:no_git => true)
+    File.directory?(target).should be_true
+    File.directory?(File.join(target, '.git')).should_not be_true
   end
 
   after(:all) do
