@@ -77,13 +77,15 @@ class LaTeXProjectTemplate
   end
 
   class Task < Rake::TaskLib
-    attr_accessor :latexmk, :clean, :default
+    attr_accessor :latexmk, :clean, :default, :dependency
 
     def initialize(target, &block)
       @target = target
       @latexmk = Latexmk.new
       @clean = Cleaning.new
       @default = :pdf
+      @dependency = Hash.new { |h, k| h[k] = [] }
+
       yield(self) if block_given?
       define_task
     end
@@ -165,26 +167,26 @@ class LaTeXProjectTemplate
       task :default => @default
 
       desc "Clean up temporary files."
-      task :clean do |t|
+      task :clean => @dependency[:clean] do |t|
         @latexmk.clean(@target)
         @clean.clean
       end
 
       desc "Clean up all files."
-      task :distclean do |t|
+      task :distclean => @dependency[:distclean] do |t|
         @latexmk.distclean(@target)
         @clean.clean
       end
 
       Latexmk::COMMAND_TO_PRODUCE_FILE.each do |type|
         desc "Create #{type.to_s}."
-        task type => [@target] do |t|
+        task type => @dependency[type] do |t|
           @latexmk.__send__(type, @target)
         end
       end
 
       desc "Create snapshot file."
-      task :snapshot, [:type,:commit] do |t, args|
+      task :snapshot, [:type, :commit] do |t, args|
         type = args.type && args.type.size > 0 ? args.type.intern : :pdf
         unless Latexmk::COMMAND_TO_PRODUCE_FILE.include?(type)
           raise "Invalid option to produce file: #{type}."
