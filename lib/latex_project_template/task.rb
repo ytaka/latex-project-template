@@ -101,7 +101,7 @@ class LaTeXProjectTemplate
       path = FileName.create(@target, :add => :prohibit, :extension => extension_from_command_type(type))
       snapshot_path = FileName.create("snapshot", File.basename(path),
                                       :type => :time, :directory => :parent, :position => :middle,
-                                      :delimiter => '', :add => :always, :format => "%Y%m%d_%H%M%S")
+                                      :delimiter => '', :add => :always, :format => "_%Y%m%d_%H%M%S")
       begin
         Rake::Task[type].execute
       rescue
