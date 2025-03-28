@@ -8,7 +8,7 @@ class LaTeXProjectTemplate
 
     attr_reader :temporary, :product, :pattern
 
-    DEFAULT_PATTERN = ["**/*~", "**/*.bak"]
+    DEFAULT_PATTERN = ["**/*~", "**/*.bak", "**/*-SAVE-ERROR"]
 
     def initialize
       @pattern = Rake::FileList.new(DEFAULT_PATTERN)
